@@ -1,4 +1,4 @@
-# DNS 터널링 탐지 실험 재현 패키지 (과제 10 · 카드 3)
+﻿# DNS 터널링 탐지 실험 재현 패키지 (과제 10 · 카드 3)
 
 ## 고정된 가설
 터널링 DNS 질의의 도메인 엔트로피를 낮추면, 엔트로피 임계값 방식의 탐지율(재현율)은 크게 떨어지지만
@@ -20,14 +20,14 @@
 python run_experiment.py --pilot --out pilot --seeds 901,902 --n-benign 200 --n-tunnel-per-level 200
 
 # 2) 본 실행 (설계 고정값: 시드 5개, 정상 1000, 단계별 수상한 1000)
-python run_experiment.py --tranco tranco.csv --tranco-date 2026-MM-DD --out exp1
+python run_experiment.py --tranco tranco.csv --tranco-date 2026-10-14 --out exp1
 
 # 3) 재확인
 python verify.py --out exp1
 
 # 4) 2차 실험(탐색적): 방어자가 낮춘 형태도 학습한 경우. 같은 시드·같은 샘플, 분할만 다름.
 #    1차 결과 폴더와 섞이지 않게 반드시 다른 폴더(--out exp2)에 저장한다.
-python run_experiment.py --tranco tranco.csv --tranco-date 2026-MM-DD --train-levels all --out exp2
+python run_experiment.py --tranco tranco.csv --tranco-date 2026-10-14 --train-levels all --out exp2
 python verify.py --out exp2
 ```
 
