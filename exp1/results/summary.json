@@ -1,0 +1,13 @@
+{
+  "pilot": false,
+  "train_levels": "high",
+  "analysis_type": "1차(본 결과)",
+  "reps": 5,
+  "mean_drop_threshold": 0.9972,
+  "mean_drop_logreg": 0.568,
+  "std_drop_threshold": 0.003346640106136305,
+  "std_drop_logreg": 0.03060228749619869,
+  "mean_diff_threshold_minus_logreg": 0.42919999999999997,
+  "rule": "mean_diff >= 0.10 이면 지지, 아니면 기각",
+  "verdict": "지지"
+}
