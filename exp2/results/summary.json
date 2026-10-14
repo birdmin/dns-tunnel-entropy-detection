@@ -1,0 +1,13 @@
+{
+  "pilot": false,
+  "train_levels": "all",
+  "analysis_type": "2차(탐색적, 지지/기각 판정에 사용하지 않음)",
+  "reps": 5,
+  "mean_drop_threshold": 1.0,
+  "mean_drop_logreg": 0.024399999999999998,
+  "std_drop_threshold": 0.0,
+  "std_drop_logreg": 0.00726636084983398,
+  "mean_diff_threshold_minus_logreg": 0.9756,
+  "rule": "mean_diff >= 0.10 이면 지지, 아니면 기각",
+  "verdict": "판정 없음(탐색적)"
+}
