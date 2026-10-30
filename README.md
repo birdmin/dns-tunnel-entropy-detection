@@ -1,29 +1,54 @@
-# 김경민 · 자기소개 사이트
+﻿# DNS 터널링 탐지 실험 재현 패키지 (과제 10)
 
-실천하지 못한 일을 솔직하게 적고, 방법을 바꿔 다시 해 보는 사람.
+## 고정된 가설
+터널링 DNS 질의의 도메인 엔트로피를 낮추면, 엔트로피 임계값 방식의 탐지율(재현율)은 크게 떨어지지만
+여러 특징을 함께 쓰는 로지스틱 회귀 분류기의 탐지율은 상대적으로 덜 떨어진다.
 
-로그인 없이 열리는 정적 사이트입니다. 첫 화면, 이야기, 숫자, 대표작, 이력서 입구로 이루어져 있습니다.
+## 고정된 판정 기준 (실행 전 확정)
+5회 반복 평균에서 (임계값 방식의 재현율 하락 폭) - (분류기의 재현율 하락 폭) >= 0.10 이면 지지, 아니면 기각.
+하락 폭 = 재현율(엔트로피 '높음') - 재현율(엔트로피 '낮음')
 
-- 사이트: https://birdmin.github.io/birdmin-portfolio/
-- 연락: birdmin9210@gmail.com
-- 대표작(논문): https://github.com/birdmin/dns-tunnel-entropy-detection
-- 대표작(앱): https://birdmin.github.io/dns-tunnel-explorer/
+## 준비
+1. Python 3 설치 후 `pip install -r requirements.txt`
+2. 정상 도메인 목록(Tranco 등 공개 순위 목록)을 직접 내려받아 `rank,domain` 형식 CSV로 저장
+   - 받은 곳의 주소와 **받은 날짜**를 논문(C27)에 기록할 것
+   - 이 저장소에는 원본 목록을 올리지 말고 출처만 적을 것(라이선스 확인)
 
-## 구성
-
+## 실행
 ```
-index.html                       사이트 전체 (CSS 포함, 한 파일)
-docs/김경민_이력서.pdf            이력서 (1쪽)
-docs/김경민_지원서류.pdf          이력서·자기소개서·경력기술서 (3쪽)
-README.md                        이 문서
+# 1) 시험 실행(합성 정상 도메인, 작은 규모). 결과는 본 결과로 쓰지 않음.
+python run_experiment.py --pilot --out pilot --seeds 901,902 --n-benign 200 --n-tunnel-per-level 200
+
+# 2) 본 실행 (설계 고정값: 시드 5개, 정상 1000, 단계별 수상한 1000)
+python run_experiment.py --tranco tranco.csv --tranco-date 2026-10-14 --out exp1
+
+# 3) 재확인
+python verify.py --out exp1
+
+# 4) 2차 실험(탐색적): 방어자가 낮춘 형태도 학습한 경우. 같은 시드·같은 샘플, 분할만 다름.
+#    1차 결과 폴더와 섞이지 않게 반드시 다른 폴더(--out exp2)에 저장한다.
+python run_experiment.py --tranco tranco.csv --tranco-date 2026-10-14 --train-levels all --out exp2
+python verify.py --out exp2
 ```
 
-## 배포 방법
+## 1차와 2차의 역할
+- **1차(--train-levels high)**: 본 결과. 가설의 지지/기각 판정은 1차로만 한다.
+- **2차(--train-levels all)**: 탐색적 분석. 학습에 높음·중간·낮음 터널링을 각 500개씩 넣는다.
+  같은 지표(재현율, 오탐률, 하락 폭)를 기술만 하고 지지/기각 판정에 쓰지 않는다.
+  1차 실행 전에 조건을 확정했고, 1차 결과를 본 뒤 2차 조건을 바꾸지 않는다.
 
-1. 저장소 `birdmin-portfolio`를 Public으로 만들고 위 파일을 main 브랜치에 올립니다.
-2. Settings → Pages → Source를 `Deploy from a branch`, 브랜치를 `main`, 폴더를 `/ (root)`로 저장합니다.
-3. 1~2분 뒤 https://birdmin.github.io/birdmin-portfolio/ 가 열립니다. 시크릿 창에서 로그인 없이 열리는지 확인합니다.
+## 출력
+- `data/rep{1..5}_samples.csv` : 원자료(회차별 4,000건 = 정상 1,000 + 단계별 수상한 1,000 x 3)
+- `results/predictions.csv`    : 시험 데이터에 대한 방식별 예측(회차별 3,000건 x 2방식)
+- `results/metrics.csv`        : 회차·방식별 재현율, 오탐률, 하락 폭
+- `results/summary.json`       : 고정된 기준을 적용한 판정
+- `results/config.json`        : 실행 조건, 라이브러리 버전, Tranco 파일 해시
 
-## 새로 쓰는 방법
-
-숫자 칸과 능력별 기록은 별도 장치(`site-updater`)가 새 기록에서 다시 만든 `index.html`로 바뀝니다. 장치를 돌린 뒤 나온 `out/index.html`을 이 저장소의 `index.html`로 교체해 올리세요.
+## 실험 구조 요약
+- 바꾸는 조건: 수상한 도메인의 엔트로피 단계(높음 4.0~4.6 / 중간 3.4~3.8 / 낮음 2.7~3.1 bit/문자)
+- 고정하는 조건: 접두사 길이 범위(16~40자), 점 개수 범위(1~3개 레이블), 학습 방식, 특징 4개, 정상 데이터 구성, 반복 시드
+- 학습(1차): 정상 500 + '높음' 수상한 500 (방어자는 회피 형태를 모른다고 가정)
+- 시험(1차): 정상 500 + 높음 500 + 중간 1,000 + 낮음 1,000
+- 학습(2차): 정상 500 + 높음·중간·낮음 각 500 / 시험(2차): 정상 500 + 높음·중간·낮음 각 500
+- 방식 A: 학습 데이터에서 균형 정확도가 최대인 엔트로피 값을 임계값으로 사용
+- 방식 B: StandardScaler + LogisticRegression (특징: 엔트로피, 길이, 숫자 비율, 레이블 개수)
